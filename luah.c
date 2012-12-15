@@ -30,6 +30,7 @@
 #include "clib/unique.h"
 #include "clib/widget.h"
 #include "clib/xdg.h"
+#include "clib/unbound.h"
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -329,6 +330,9 @@ luaH_init(void)
 
     /* Export sqlite3 */
     sqlite3_class_setup(L);
+
+    /* Export libunbound */
+    unbound_lib_setup(L);
 
     /* Export timer */
     timer_class_setup(L);

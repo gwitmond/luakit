@@ -1,6 +1,7 @@
 -- Global variables for luakit
 globals = {
-    homepage            = "http://luakit.org/",
+    homepage            = "https://www.ecca.wtmnd.nl/",
+ -- homepage            = "http://luakit.org/",
  -- homepage            = "http://github.com/mason-larobina/luakit",
     scroll_step         = 40,
     zoom_step           = 0.1,
@@ -13,6 +14,13 @@ globals = {
  -- load_etc_hosts      = false,
  -- Disables checking if a filepath exists in search_open function
  -- check_filepath      = false,
+
+   -- Use DNSSEC and DANE to specify valid certificates. We ignore the OS-provided list
+   -- of global CA-certificates.
+   -- We do a dns lookup for the TLSA-record with the server certificate or its CA certificate.
+   -- ie. TLSA usage 3 or 2 with selector 0 (full cert) and matching (0, whole cert).
+   -- we feed that certificate into the ca_cert structure of the TLS-socket via soup.ssl.*
+   ssl_dnssec_dane      = true,
 }
 
 -- Make useragent
@@ -23,23 +31,30 @@ globals.useragent = string.format("Mozilla/5.0 (%s) AppleWebKit/%s+ (KHTML, like
     string.sub(arch, 1, -2), luakit.webkit_user_agent_version,
     luakit.webkit_version, (lkv and ("/" .. lkv)) or "")
 
--- Search common locations for a ca file which is used for ssl connection validation.
-local ca_files = {
-    -- $XDG_DATA_HOME/luakit/ca-certificates.crt
-    luakit.data_dir .. "/ca-certificates.crt",
-    "/etc/certs/ca-certificates.crt",
-    "/etc/ssl/certs/ca-certificates.crt",
-}
--- Use the first ca-file found
-for _, ca_file in ipairs(ca_files) do
-    if os.exists(ca_file) then
-        soup.ssl_ca_file = ca_file
-        break
-    end
+-- Don't load the Global CA certificate when we use DNSSEC-DANE.
+-- instead, load an empty file to prevent accepting everything...
+if globals.ssl_dnssec_dane then
+   soup.ssl_ca_file = "/dev/null"
+else
+   -- Search common locations for a ca file which is used for ssl connection validation.
+   local ca_files = {
+      -- $XDG_DATA_HOME/luakit/ca-certificates.crt
+      luakit.data_dir .. "/ca-certificates.crt",
+      "/etc/certs/ca-certificates.crt",
+      "/etc/ssl/certs/ca-certificates.crt",
+   }
+   -- Use the first ca-file found
+   for _, ca_file in ipairs(ca_files) do
+      if os.exists(ca_file) then
+	 soup.ssl_ca_file = ca_file
+	 break
+      end
+   end
 end
 
 -- Change to stop navigation sites with invalid or expired ssl certificates
-soup.ssl_strict = false
+-- With DANE we want strict validation against the DNS-provided certificate.
+soup.ssl_strict = true
 
 -- Set cookie acceptance policy
 cookie_policy = { always = 0, never = 1, no_third_party = 2 }

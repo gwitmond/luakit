@@ -2,6 +2,8 @@
 -- WebKit WebView class --
 --------------------------
 
+require "dane"
+
 -- Webview class table
 webview = {}
 
@@ -12,12 +14,24 @@ webview.init_funcs = {
         view.user_agent = globals.useragent
     end,
 
+    listen_dane_navigation_request = function (view, w)
+        view:add_signal("navigation-request", 
+                       function(_, uri) 
+                          info("init_func: navigation_request has uri: %s", tostring(uri))
+                          dane_navigation_request(uri)
+                       end)
+    end,
+
     -- Check if checking ssl certificates
     checking_ssl = function (view, w)
         local ca_file = soup.ssl_ca_file
         if ca_file and os.exists(ca_file) then
             w.checking_ssl = true
         end
+       -- also set checking_ssl if we use DNSSEC and DANE without global CAs
+       if globals.ssl_dnssec_dane then
+          w.checking_ssl = true
+       end
     end,
 
     -- Update window and tab titles

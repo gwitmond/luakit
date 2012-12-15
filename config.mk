@@ -70,6 +70,7 @@ PKGS += gthread-2.0
 PKGS += webkit-1.0
 PKGS += sqlite3
 PKGS += $(LUA_PKG_NAME)
+# PKGS += unbound   # not yet available in pkg-config format
 
 # For systems using older WebKit-GTK versions which bundle JavaScriptCore
 # within the WebKit-GTK package.
@@ -95,4 +96,4 @@ CFLAGS  += $(shell pkg-config --cflags $(PKGS))
 CFLAGS  += -I./
 
 # Add pkg-config options to linker flags.
-LDFLAGS += $(shell pkg-config --libs $(PKGS))
+LDFLAGS += $(shell pkg-config --libs $(PKGS)) -lunbound
